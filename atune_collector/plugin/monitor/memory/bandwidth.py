@@ -104,7 +104,7 @@ class MemBandwidth(Monitor):
                    Bit.append(int(bit))
 
         count = int(count/2)
-        for i in range(count):
+        for i in range(len(Speed)):
                max_bandwidth += Speed[i] * Bit[i]
 
         max_bandwidth = max_bandwidth / 8
@@ -118,7 +118,7 @@ class MemBandwidth(Monitor):
             cache_misses = int(match.group(1).replace(",", ""))
             # print(f'cache_misses : {cache_misses}')
             self.__cnt["CacheMisses"] = cache_misses
-            self.__cnt["Bandwidth"] = (cache_misses * self.__cache_line_size) / (self.__interval / 1000.0) / 1024 / 1024
+            self.__cnt["Bandwidth"] = 0
             self.__cnt["Total"] = self.__cnt["Bandwidth"] * 2
             if self.__cnt["Total_Max"] != 0:
                 self.__cnt["Total_Util"] = (self.__cnt["Total"] / self.__cnt["Total_Max"]) * 100

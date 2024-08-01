@@ -63,7 +63,7 @@ collector-install:
 	@echo "BEGIN INSTALL A-Tune-Collector..."
 	! pip3 show atune-collector || pip3 uninstall atune-collector -y
 	rm -rf collector
-	git clone https://github.com/GoldenStain/A-Tune-Collector.git collector
+	git clone https://gitee.com/goldenstain/A-Tune-Collector-Kylin.git collector
 	cd collector && python3 setup.py install
 	@echo "END INSTALL A-Tune-Collector..."
 

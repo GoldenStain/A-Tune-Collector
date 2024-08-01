@@ -1,229 +1,229 @@
-[English](./README.en.md) | 简体中文
-# A-Tune-Collector
+<img src="misc/A-Tune-logo.png" width="50%" height="50%"/>
 
-#### 介绍
-A-Tune-Collector用于各类系统资源的数据采集，也可以作为A-Tune项目的采集器。
+English | [简体中文](./README-zh.md)
+
+## Introduction to A-Tune 
+
+**A-Tune** is an OS tuning engine powered by AI. A-Tune uses AI technologies to enable the OS to understand services, simplify IT system tuning, and maximize application performance.
 
 
-#### 安装教程
+I. A-Tune Installation
+------------
 
-若作为采集器给A-Tune项目使用，需要执行如下命令进行安装
+Supported OS: openEuler 20.03 LTS or later
 
+### Method 1 (applicable to common users): Use the default A-Tune of openEuler.
+
+```bash
+yum install -y atune
 ```
-python3 setup.py install
+For openEuler 20.09 or later, atune-engine is needed.
+
+```bash
+yum install -y atune-engine
 ```
+**Note:** After running `systemctl start atuned`, an error message may displayed because of the authentication certificate is not configured. There are two ways to solve the problem:
+1. Configure the certificate and use HTTPS for secure connection
+ - Generate the certificate files of the server and client, then
+ - Change lines 60 ~ 62 and 67 ~ 69 in `/etc/anined/anined.cnf` to the absolute path of the certificate file
+ - Change lines 23 ~ 25 in `/etc/atuned/engine.cnf` to the absolute path of the certificate file
+ - For details about how to generate certificates, see `restcerts` and `enginecerts` in `A-Tune/Makefile`
+2. Cancel certificate authentication and use HTTP insecure connection
+ - In scenarios with low security requirements (for example, local tests), you can use the HTTP connection
+ - Change the values of `rest_tls(L59)` and `engine_tls(L66)` in `/etc/atuned/atuned.cnf` to false
+ - Change the value of `engine_tls(L22)` in `/etc/atuned/engine.cnf` to false
+<br>
+No matter which method is used, one should restart services after the setting is complete. For details, see "II. Quick Guide - 2. Manage the A-Tune service - Load and start the atuned and atune-engine services".
 
-#### 使用说明
+### Method 2 (applicable to developers): Use the source code of the local repository for installation.
 
-采集命令格式
-
-```
-cd atune_collector
-python3 collect_data.py [OPTIONS]
-```
-
-参数说明
-
-| 参数         | 描述                                                         |
-| ------------ | ------------------------------------------------------------ |
-| --config, -c | 指定待解析的json文件，json文件用于配置待采集的系统资源信息；若不指定该选项，默认读取/etc/atune_collector/collect_data.json文件 |
-
-使用示例
-
-- 使用默认的采集资源配置文件
-
-  ```
-  python3 collect_data.py
-  ```
-
-- 使用指定的采集资源配置文件
-
-  ```
-  python3 collect_data.py -c collect_data.json
-  ```
-
-配置说明
-
-表1 collect_data.json文件
-
-| **配置名称**     | **配置说明**                          | **参数类型** | **取值范围** |
-| ---------------- | ------------------------------------- | ------------ | ------------ |
-| network          | 待采集的指定网卡                      | 字符串       | -            |
-| block            | 待采集的指定磁盘                      | 字符串       | -            |
-| application      | 需要采集的应用进程                     | 字符串       | -            |
-| sample_num       | 待采集的次数                          | 整型         | >0           |
-| interval         | 待采集的间隔时间，单位为秒            | 整型         | >0           |
-| output_dir       | 采集完后数据存储的文件路径            | 字符串       | -            |
-| workload_type    | 采集环境的应用负载类型，用作输出文件名，默认为default | 字符串       | -            |
-| collection_items | 需要采集的系统参数项，参见表2         | 列表         | -            |
-
-
-最终采集完后，数据将保存为: `${output_dir}/${workload_type}-${finish_timestamp}.csv`
-
-表2 collection_items项配置说明
-
-| **配置名称** | **配置说明**                                             | **参数类型** | **取值范围** |
-| ------------ | -------------------------------------------------------- | ------------ | ------------ |
-| name         | 待采集项的名称                                           | 字符串       | -            |
-| module       | 待采集项的所属分类，该分类需要与对应采集模块的定义相匹配 | 字符串       | -            |
-| purpose      | 待采集项的所属类型，该类型需要与对应采集模块的定义相匹配 | 字符串       | -            |
-| metrics      | 待采集项的具体指标                                       | 列表         | -            |
-| threshold    | 待采集项的门限值                                         | 整型         | -            |
-
-配置示例
-
-collect_data.json文件配置示例：
-
-```
-{
-  "network": "eth0",
-  "block": "sda",
-  "application": "mysqld",
-  "sample_num": 20,
-  "interval": 5,
-  "output_dir": "/var/atuned/collect_data",
-  "workload_type": "default",
-  "collection_items": [
-    {
-      "name": "cpu",
-      "module": "CPU",
-      "purpose": "STAT",
-      "metrics": [
-        "usr",
-        "nice",
-        "sys",
-        "iowait",
-        "irq",
-        "soft",
-        "steal",
-        "guest",
-        "util",
-        "cutil"
-      ],
-      "threshold": 30
-    },
-    {
-      "name": "storage",
-      "module": "STORAGE",
-      "purpose": "STAT",
-      "metrics": [
-        "rs",
-        "ws",
-        "rMBs",
-        "wMBs",
-        "rrqm",
-        "wrqm",
-        "rareq-sz",
-        "wareq-sz",
-        "r_await",
-        "w_await",
-        "util",
-        "aqu-sz"
-      ]
-    },
-    {
-      "name": "network",
-      "module": "NET",
-      "purpose": "STAT",
-      "metrics": [
-        "rxkBs",
-        "txkBs",
-        "rxpcks",
-        "txpcks",
-        "ifutil"
-      ]
-    },
-    {
-      "name": "network-err",
-      "module": "NET",
-      "purpose": "ESTAT",
-      "metrics": [
-        "errs",
-        "util"
-      ]
-    },
-    {
-      "name": "mem.band",
-      "module": "MEM",
-      "purpose": "BANDWIDTH",
-      "metrics": [
-        "Total_Util"
-      ]
-    },
-    {
-      "name": "perf",
-      "module": "PERF",
-      "purpose": "STAT",
-      "metrics": [
-        "IPC",
-        "CACHE-MISS-RATIO",
-        "MPKI",
-        "ITLB-LOAD-MISS-RATIO",
-        "DTLB-LOAD-MISS-RATIO",
-        "SBPI",
-        "SBPC"
-      ]
-    },
-    {
-      "name": "vmstat",
-      "module": "MEM",
-      "purpose": "VMSTAT",
-      "metrics": [
-        "procs.b",
-        "memory.swpd",
-        "io.bo",
-        "system.in",
-        "system.cs",
-        "util.swap",
-        "util.cpu",
-        "procs.r"
-      ]
-    },
-    {
-      "name": "sys.task",
-      "module": "SYS",
-      "purpose": "TASKS",
-      "metrics": [
-        "procs",
-        "cswchs"
-      ]
-    },
-    {
-      "name": "sys.ldavg",
-      "module": "SYS",
-      "purpose": "LDAVG",
-      "metrics": [
-        "runq-sz",
-        "plist-sz",
-        "ldavg-1",
-        "ldavg-5"
-      ]
-    },
-    {
-      "name": "file.util",
-      "module": "SYS",
-      "purpose": "FDUTIL",
-      "metrics": [
-        "fd-util"
-      ]
-    },
-    {
-      "name": "process",
-      "module": "PROCESS",
-      "purpose": "SCHED",
-      "metrics": [
-        "exec_start",
-        "vruntime",
-        "sum_exec_runtime",
-        "switches",
-        "voluntary_switches",
-        "involuntary_switches"
-      ]
-    }
-  ]
-}
+#### 1. Install dependent system software packages.
+```bash
+yum install -y golang-bin python3 perf sysstat hwloc-gui lshw
 ```
 
-#### 相关信息
+#### 2. Install Python dependency packages.  
 
-A-Tune项目地址：https://gitee.com/openeuler/A-Tune
+#### 2.1 Install dependency for the A-Tune service.
+```bash
+yum install -y python3-dict2xml python3-flask-restful python3-pandas python3-scikit-optimize python3-xgboost python3-pyyaml
+```
+Or
+```bash
+pip3 install dict2xml Flask-RESTful pandas scikit-optimize xgboost scikit-learn pyyaml
+```
+
+#### 2.2 (Optional) Install dependency for the database.
+If you have already installed the database application and want to store A-Tune collection and tuning data to the database, you must also install the following packages:
+```bash
+yum install -y python3-sqlalchemy python3-cryptography
+```
+Or
+```bash
+pip3 install sqlalchemy cryptography
+```
+To use the database, you should also select either of the following methods to install dependency for the database application.
+| **Database** | **Install Using yum** | **Install Using pip** |
+| ------------------------------ | ---------- | ------------ |
+| PostgreSQL | yum install -y python3-psycopg2 | pip3 install psycopg2 |
+#### 3. Download the source code.
+```bash
+git clone https://gitee.com/openeuler/A-Tune.git
+```
+
+#### 4. Compile.
+```bash
+cd A-Tune
+make
+```
+
+#### 5. Install.
+```bash
+make collector-install
+make install
+```
+
+II. Quick Guide
+------------
+
+### 1. Configure the A-Tune service.
+
+#### Modify the network and disk configuration in the atuned.cnf file.
+
+Note: If the atuned service is installed by 'make install', NIC and disk have been automatically updated to the default device in current machine. If you need to collect data from other devices, configure atuned service according to following step.
+
+You can run the following command to query the NIC that needs to be specified for data collection or optimization and change the value of the network configuration item in the **/etc/atuned/atuned.cnf** file to the specified NIC.
+
+```bash
+ip addr
+```
+
+You can run the following command to query the disk that needs to be specified for data collection or optimization and change the value of the disk configuration item in the **/etc/atuned/atuned.cnf** file to the specified disk.
+
+```bash
+fdisk -l | grep dev
+```
+
+### 2. Manage the A-Tune service.
+
+#### Load and start the atuned and atune-engine services.
+
+```bash
+systemctl daemon-reload
+systemctl start atuned
+systemctl start atune-rest
+systemctl start atune-engine
+```
+
+#### Check the status of the atuned and atune-engine services.
+
+```bash
+systemctl status atuned
+systemctl status atune-rest
+systemctl status atune-engine
+```
+
+### 3. Generate AI models.
+
+You can save the newly collected data to the **A-Tune/analysis/dataset** directory and run the model generation tool to update the AI model in the **A-Tune/analysis/models** directory.
+
+**Format**
+
+python3 generate_models.py <OPTIONS>
+
+**Parameter Description**
+
+
+
+| Parameter        | Description                                                  |
+| ---------------- | ------------------------------------------------------------ |
+| --csv_path, -d   | Path for storing CSV files required for model training. The default directory is **A-Tune/analysis/dataset**. |
+| --model_path, -m | Path for storing the new models generated during training. The default path is **A-Tune/analysis/models**. |
+| --select, -s     | Indicates whether to generate feature models. The default value is **false**. |
+| --search, -g     | Indicates whether to enable parameter space search. The default value is **false**. |
+
+Example:
+
+```
+python3 generate_models.py
+```
+
+### 4. Run the atune-adm commands.
+
+#### list command
+
+This command is used to list the supported profiles as well as active profiles.
+
+Format:
+
+atune-adm list
+
+Example:
+
+```bash
+atune-adm list
+```
+
+#### profile command
+
+This command is used to manually activate the profile to make it in the active state.
+
+Format:
+
+atune-adm profile <PROFILE>
+
+Example: Activate the profile corresponding to the web-nginx-http-long-connection.
+
+```bash
+atune-adm profile web-nginx-http-long-connection
+```
+
+#### analysis command (online static tuning)
+
+This command is used to collect real-time statistics from the system to identify and automatically optimize workload types.
+
+Note: Some data collected by the analysis command are from the hard disk and network card configured in the atuned service configuration file (/etc/atuned/atuned.cnf). Before executing the command, check whether the configuration items are as expected. To collect data from other network cards or hard disk, you need to update the atuned service configuration file and restart the atuned service.
+
+Format:
+
+atune-adm analysis [OPTIONS]
+
+Example 1: Use the default model to identify applications and perform automatic tuning.
+
+```bash
+atune-adm analysis
+```
+
+Example 2: Use the user-defined model for recognition.
+
+```bash
+atune-adm analysis --model /usr/libexec/atuned/analysis/models/new-model.m
+```
+
+#### tuning command (offline dynamic tuning)
+
+Use the specified project file to search the dynamic space for parameters and find the optimal solution under the current environment configuration.
+
+Format:
+
+atune-adm tuning [OPTIONS] <PROJECT_YAML>
+
+Example: See [the A-Tune offline tuning example](./examples/tuning). Each example has a corresponding README guide.
+
+For details about other commands, see the atune-adm help information or [A-Tune User Guide](./Documentation/UserGuide/A-Tune-User-Guide.md).
+
+III. Web UI
+--------
+
+[A-Tune-UI](https://gitee.com/openeuler/A-Tune-UI) is a web project based on A-Tune. Please check A-Tune-UI [README](https://gitee.com/openeuler/A-Tune-UI/blob/master/README.en.md) for details.
+
+IV. How to Contribute
+--------
+
+We welcome new contributors to participate in the project, and we are happy to provide guidance for new contributors. Please sign [CLA](https://openeuler.org/en/cla.html) before contribution.
+
+### Mailing list
+If you have any question, please contact [A-Tune](https://mailweb.openeuler.org/postorius/lists/a-tune.openeuler.org/).
+
+### Routine meeting
+The SIG meeting is hold at 10:00-12:00 AM on Friday every two weeks. Please send your issues to the [A-Tune](https://mailweb.openeuler.org/postorius/lists/a-tune.openeuler.org/) mailing list.
